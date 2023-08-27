@@ -1,0 +1,64 @@
+Certainly! Abstraction is a fundamental principle in computer systems that involves simplifying complex reality by modeling classes, objects, or operations in a more manageable way. Here's an example in Java that demonstrates abstraction through the concept of different types of vehicles:
+
+```java
+// Abstraction: Creating an abstract base class to represent a vehicle
+abstract class Vehicle {
+    protected String type;
+
+    public Vehicle(String type) {
+        this.type = type;
+    }
+
+    // Abstract method to be implemented by subclasses
+    abstract void start();
+
+    // Concrete method in the base class
+    void stop() {
+        System.out.println(type + " has stopped.");
+    }
+}
+
+// Concrete subclasses implementing the abstract methods
+class Car extends Vehicle {
+    public Car() {
+        super("Car");
+    }
+
+    void start() {
+        System.out.println("Car has started.");
+    }
+}
+
+class Motorbike extends Vehicle {
+    public Motorbike() {
+        super("Motorbike");
+    }
+
+    void start() {
+        System.out.println("Motorbike has started.");
+    }
+}
+
+public class AbstractionExample {
+    public static void main(String[] args) {
+        Vehicle car = new Car();
+        Vehicle motorbike = new Motorbike();
+
+        car.start();
+        car.stop();
+
+        motorbike.start();
+        motorbike.stop();
+    }
+}
+```
+
+In this example:
+
+1. We create an abstract base class `Vehicle` with an instance variable `type` and an abstract method `start()`. The `start()` method is declared in the base class but doesn't have an implementation. This enforces the concept of abstraction, where the base class defines the contract that its subclasses need to adhere to.
+
+2. We define two concrete subclasses `Car` and `Motorbike` that extend the `Vehicle` class. These subclasses provide implementations for the `start()` method as required by the abstraction.
+
+3. In the `main` method of the `AbstractionExample` class, we demonstrate how abstraction works. We create instances of both `Car` and `Motorbike` and call their `start()` and `stop()` methods. We use the base class type `Vehicle` to interact with the objects, demonstrating the ability to work with abstract concepts without knowing the exact implementation details.
+
+This example illustrates the concept of abstraction by creating an abstract base class that defines a common contract for its subclasses while allowing each subclass to provide its own implementation.
