@@ -1,0 +1,75 @@
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+
+public class MemoryManagementVisualizer {
+    private JFrame frame;
+    private JPanel memoryPanel;
+    private JTextArea processInfoTextArea;
+
+    // Simulated memory components
+    private int totalMemory = 1024; // Total memory size in MB
+    private int usedMemory = 0;    // Currently used memory in MB
+
+    public MemoryManagementVisualizer() {
+        frame = new JFrame("Memory Management Visualizer");
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setSize(800, 600);
+
+        memoryPanel = new JPanel();
+        memoryPanel.setLayout(new BorderLayout());
+
+        processInfoTextArea = new JTextArea(10, 40);
+        JScrollPane scrollPane = new JScrollPane(processInfoTextArea);
+
+        JButton allocateButton = new JButton("Allocate Memory");
+        allocateButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                allocateMemory(64); // Simulate allocating 64 MB of memory
+                updateMemoryPanel();
+            }
+        });
+
+        memoryPanel.add(allocateButton, BorderLayout.NORTH);
+        memoryPanel.add(scrollPane, BorderLayout.CENTER);
+
+        frame.add(memoryPanel);
+        frame.setVisible(true);
+
+        updateMemoryPanel();
+    }
+
+    private void allocateMemory(int memoryToAllocate) {
+        if (usedMemory + memoryToAllocate <= totalMemory) {
+            usedMemory += memoryToAllocate;
+            processInfoTextArea.append("Allocated " + memoryToAllocate + " MB of memory.\n");
+        } else {
+            processInfoTextArea.append("Memory allocation failed. Not enough free memory.\n");
+        }
+    }
+
+    private void updateMemoryPanel() {
+        memoryPanel.removeAll();
+
+        JLabel memoryLabel = new JLabel("Total Memory: " + totalMemory + " MB");
+        JLabel usedMemoryLabel = new JLabel("Used Memory: " + usedMemory + " MB");
+        JProgressBar memoryProgressBar = new JProgressBar(0, totalMemory);
+        memoryProgressBar.setValue(usedMemory);
+        memoryProgressBar.setStringPainted(true);
+
+        memoryPanel.add(memoryLabel, BorderLayout.NORTH);
+        memoryPanel.add(usedMemoryLabel, BorderLayout.CENTER);
+        memoryPanel.add(memoryProgressBar, BorderLayout.SOUTH);
+
+        memoryPanel.revalidate();
+        memoryPanel.repaint();
+    }
+
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(() -> {
+            new MemoryManagementVisualizer();
+        }
+    }
+}
