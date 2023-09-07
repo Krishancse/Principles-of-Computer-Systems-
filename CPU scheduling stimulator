@@ -1,0 +1,225 @@
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.util.LinkedList;
+import java.util.Queue;
+import java.util.Timer;
+import java.util.TimerTask;
+
+public class CPUSchedulingSimulator {
+    // Declare instance variables
+    private JFrame frame;
+    private JPanel controlPanel, simulationPanel;
+    private JTextArea processQueueTextArea, ganttChartTextArea;
+    private JButton startButton, pauseButton, resetButton;
+    private JComboBox<String> algorithmComboBox;
+    private JLabel timeLabel;
+
+    private Queue<Process> processQueue; // Queue to store processes
+    private Timer timer; // Timer for scheduling tasks
+    private boolean isRunning; // Flag to track the simulation state
+    private int timeQuantum = 1; // Time quantum for Round Robin algorithm
+    private int currentTime; // Current simulation time
+
+    // Constructor for initializing the GUI and simulation
+    public CPUSchedulingSimulator() {
+        // Create the main application window
+        frame = new JFrame("CPU Scheduling Simulator");
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setSize(800, 600);
+
+        // Create control panel and simulation panel
+        controlPanel = new JPanel(new FlowLayout());
+        simulationPanel = new JPanel(new GridLayout(2, 1));
+
+        // Create text areas for process queue and Gantt chart
+        processQueueTextArea = new JTextArea(10, 20);
+        ganttChartTextArea = new JTextArea(5, 20);
+        ganttChartTextArea.setEditable(false);
+
+        // Create scroll panes for text areas
+        JScrollPane processQueueScrollPane = new JScrollPane(processQueueTextArea);
+        JScrollPane ganttChartScrollPane = new JScrollPane(ganttChartTextArea);
+
+        // Create buttons, combo box, and time label
+        startButton = new JButton("Start");
+        pauseButton = new JButton("Pause");
+        resetButton = new JButton("Reset");
+        timeLabel = new JLabel("Time: 0");
+
+        algorithmComboBox = new JComboBox<>(new String[]{"FCFS", "Round Robin"});
+        algorithmComboBox.setSelectedIndex(0);
+
+        // Add components to control panel
+        controlPanel.add(startButton);
+        controlPanel.add(pauseButton);
+        controlPanel.add(resetButton);
+        controlPanel.add(algorithmComboBox);
+        controlPanel.add(timeLabel);
+
+        // Add scroll panes to the simulation panel
+        simulationPanel.add(processQueueScrollPane);
+        simulationPanel.add(ganttChartScrollPane);
+
+        // Add control panel and simulation panel to the main frame
+        frame.add(controlPanel, BorderLayout.NORTH);
+        frame.add(simulationPanel, BorderLayout.CENTER);
+
+        // Initialize process queue and timer
+        processQueue = new LinkedList<>();
+        timer = new Timer();
+
+        // Add action listeners to buttons
+        startButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (!isRunning) {
+                    startSimulation();
+                }
+            }
+        });
+
+        pauseButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                pauseSimulation();
+            }
+        });
+
+        resetButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                resetSimulation();
+            }
+        });
+
+        // Make the main frame visible
+        frame.setVisible(true);
+    }
+
+    // Method to start the simulation
+    private void startSimulation() {
+        isRunning = true;
+        startButton.setEnabled(false);
+        pauseButton.setEnabled(true);
+        resetButton.setEnabled(false);
+        algorithmComboBox.setEnabled(false);
+
+        currentTime = 0;
+        ganttChartTextArea.setText("");
+        processQueue.clear();
+
+        // Add sample processes to the queue
+        processQueue.offer(new Process("P1", 0, 3));
+        processQueue.offer(new Process("P2", 1, 2));
+        processQueue.offer(new Process("P3", 2, 4));
+        processQueue.offer(new Process("P4", 3, 1));
+
+        // Determine the selected scheduling algorithm
+        String selectedAlgorithm = algorithmComboBox.getSelectedItem().toString();
+        if (selectedAlgorithm.equals("FCFS")) {
+            executeFCFSSimulation();
+        } else if (selectedAlgorithm.equals("Round Robin")) {
+            executeRoundRobinSimulation();
+        }
+    }
+
+    // Method to pause the simulation
+    private void pauseSimulation() {
+        isRunning = false;
+        startButton.setEnabled(true);
+        pauseButton.setEnabled(false);
+        resetButton.setEnabled(true);
+        algorithmComboBox.setEnabled(true);
+        timer.cancel(); // Cancel the timer to pause the simulation
+    }
+
+    // Method to reset the simulation
+    private void resetSimulation() {
+        isRunning = false;
+        startButton.setEnabled(true);
+        pauseButton.setEnabled(false);
+        resetButton.setEnabled(false);
+        algorithmComboBox.setEnabled(true);
+        timer.cancel(); // Cancel the timer to stop the simulation
+
+        currentTime = 0;
+        ganttChartTextArea.setText("");
+        processQueue.clear();
+        timeLabel.setText("Time: 0");
+    }
+
+    // Method to execute the FCFS simulation
+    private void executeFCFSSimulation() {
+        while (!processQueue.isEmpty()) {
+            Process currentProcess = processQueue.poll();
+            int executionTime = currentProcess.getBurstTime();
+            ganttChartTextArea.append("[" + currentProcess.getName() + "] ");
+            currentTime += executionTime;
+            timeLabel.setText("Time: " + currentTime);
+        }
+        pauseSimulation(); // Pause the simulation when all processes are completed
+    }
+
+    // Method to execute the Round Robin simulation
+    private void executeRoundRobinSimulation() {
+        timer.scheduleAtFixedRate(new TimerTask() {
+            @Override
+            public void run() {
+                if (!processQueue.isEmpty()) {
+                    Process currentProcess = processQueue.poll();
+                    int remainingTime = currentProcess.getBurstTime();
+                    ganttChartTextArea.append("[" + currentProcess.getName() + "] ");
+                    if (remainingTime <= timeQuantum) {
+                        currentTime += remainingTime;
+                        timeLabel.setText("Time: " + currentTime);
+                    } else {
+                        currentTime += timeQuantum;
+                        timeLabel.setText("Time: " + currentTime);
+                        currentProcess.setBurstTime(remainingTime - timeQuantum);
+                        processQueue.offer(currentProcess);
+                    }
+                } else {
+                    pauseSimulation(); // Pause the simulation when all processes are completed
+                }
+            }
+        }, 0, 1000); // Schedule the timer task to run every 1 second
+    }
+
+    // Main method to start the application
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(() -> {
+            new CPUSchedulingSimulator(); // Create an instance of the simulator
+        });
+    }
+
+    // Inner class to represent a process
+    private class Process {
+        private String name;
+        private int arrivalTime;
+        private int burstTime;
+
+        public Process(String name, int arrivalTime, int burstTime) {
+            this.name = name;
+            this.arrivalTime = arrivalTime;
+            this.burstTime = burstTime;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public int getArrivalTime() {
+            return arrivalTime;
+        }
+
+        public int getBurstTime() {
+            return burstTime;
+        }
+
+        public void setBurstTime(int burstTime) {
+            this.burstTime = burstTime;
+        }
+    }
+}
