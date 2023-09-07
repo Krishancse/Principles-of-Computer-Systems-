@@ -1,0 +1,154 @@
+import java.io.*;
+import javax.swing.*;
+import javax.swing.filechooser.FileNameExtensionFilter;
+import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.TreePath;
+
+public class FileSystemExplorer {
+    private JFrame frame;
+    private JTree directoryTree;
+    private DefaultTreeModel treeModel;
+    private DefaultMutableTreeNode root;
+
+    public FileSystemExplorer() {
+        frame = new JFrame("File System Explorer");
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+        root = new DefaultMutableTreeNode(new File("C:/")); // Root directory
+        treeModel = new DefaultTreeModel(root);
+        directoryTree = new JTree(treeModel);
+
+        JScrollPane treeScrollPane = new JScrollPane(directoryTree);
+        frame.add(treeScrollPane);
+
+        initializeUI();
+    }
+
+    private void initializeUI() {
+        // Create buttons for various operations
+        JButton createFileButton = new JButton("Create File");
+        createFileButton.addActionListener(e -> createFile());
+
+        JButton createDirectoryButton = new JButton("Create Directory");
+        createDirectoryButton.addActionListener(e -> createDirectory());
+
+        JButton deleteButton = new JButton("Delete");
+        deleteButton.addActionListener(e -> delete());
+
+        JButton renameButton = new JButton("Rename");
+        renameButton.addActionListener(e -> rename());
+
+        JButton refreshButton = new JButton("Refresh");
+        refreshButton.addActionListener(e -> refresh());
+
+        // Create a panel to hold the buttons
+        JPanel buttonPanel = new JPanel();
+        buttonPanel.add(createFileButton);
+        buttonPanel.add(createDirectoryButton);
+        buttonPanel.add(deleteButton);
+        buttonPanel.add(renameButton);
+        buttonPanel.add(refreshButton);
+
+        // Add the button panel to the frame
+        frame.add(buttonPanel, "South");
+
+        // Set frame size and visibility
+        frame.setSize(800, 600);
+        frame.setVisible(true);
+    }
+
+    private void createFile() {
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setDialogTitle("Create a New File");
+
+        // Set file filter (optional)
+        FileNameExtensionFilter filter = new FileNameExtensionFilter("Text Files (*.txt)", "txt");
+        fileChooser.setFileFilter(filter);
+
+        int userChoice = fileChooser.showSaveDialog(frame);
+
+        if (userChoice == JFileChooser.APPROVE_OPTION) {
+            File selectedFile = fileChooser.getSelectedFile();
+
+            if (selectedFile.exists()) {
+                JOptionPane.showMessageDialog(frame, "File already exists.", "Error", JOptionPane.ERROR_MESSAGE);
+            } else {
+                try {
+                    boolean created = selectedFile.createNewFile();
+
+                    if (created) {
+                        JOptionPane.showMessageDialog(frame, "File created successfully.", "Success", JOptionPane.INFORMATION_MESSAGE);
+                        
+                        // You can update the directory view to include the newly created file
+                        // For example, if you have a JTree representing the file structure, update the tree model.
+                        DefaultMutableTreeNode newNode = new DefaultMutableTreeNode(selectedFile.getName());
+                        root.add(newNode);
+                        treeModel.reload(root);
+
+                    } else {
+                        JOptionPane.showMessageDialog(frame, "Failed to create file.", "Error", JOptionPane.ERROR_MESSAGE);
+                    }
+                } catch (IOException e) {
+                    JOptionPane.showMessageDialog(frame, "An error occurred while creating the file.", "Error", JOptionPane.ERROR_MESSAGE);
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+    private void createDirectory() {
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setDialogTitle("Create a New Directory");
+        fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+
+        int userChoice = fileChooser.showSaveDialog(frame);
+
+        if (userChoice == JFileChooser.APPROVE_OPTION) {
+            File selectedDirectory = fileChooser.getSelectedFile();
+
+            if (selectedDirectory.exists()) {
+                JOptionPane.showMessageDialog(frame, "Directory already exists.", "Error", JOptionPane.ERROR_MESSAGE);
+            } else {
+                boolean created = selectedDirectory.mkdir();
+
+                if (created) {
+                    JOptionPane.showMessageDialog(frame, "Directory created successfully.", "Success", JOptionPane.INFORMATION_MESSAGE);
+                    
+                    // You can update the directory view to include the newly created directory
+                    // For example, if you have a JTree representing the file structure, update the tree model.
+                    DefaultMutableTreeNode newNode = new DefaultMutableTreeNode(selectedDirectory.getName());
+                    root.add(newNode);
+                    treeModel.reload(root);
+
+                } else {
+                    JOptionPane.showMessageDialog(frame, "Failed to create directory.", "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        }
+    }
+
+    private void delete() {
+        TreePath[] selectedPaths = directoryTree.getSelectionPaths();
+
+        if (selectedPaths != null) {
+            for (TreePath path : selectedPaths) {
+                DefaultMutableTreeNode selectedNode = (DefaultMutableTreeNode) path.getLastPathComponent();
+                Object selectedObject = selectedNode.getUserObject();
+
+                if (selectedObject instanceof File) {
+                    File selectedFile = (File) selectedObject;
+
+                    int choice = JOptionPane.showConfirmDialog(frame, "Are you sure you want to delete this file?", "Confirm Delete", JOptionPane.YES_NO_OPTION);
+
+                    if (choice == JOptionPane.YES_OPTION) {
+                        boolean deleted = selectedFile.delete();
+
+                        if (deleted) {
+                            DefaultMutableTreeNode parentNode = (DefaultMutableTreeNode) selectedNode.getParent();
+                            treeModel.removeNodeFromParent(selectedNode);
+                            treeModel.reload(parentNode);
+
+                            JOptionPane.showMessageDialog(frame, "File deleted successfully.", "Success", JOptionPane.INFORMATION_MESSAGE);
+                        } else {
+                            JOptionPane.showMessageDialog(frame, "Failed to delete file.", "Error",
